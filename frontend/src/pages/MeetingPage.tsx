@@ -10,6 +10,8 @@ import { ParticipantsPanel } from "@/components/participants-panel";
 import useZustand from "@/state/provider";
 export function MeetingPage() {
   const { theme } = useTheme();
+
+  
   const socket = useZustand((state) => state.socket);
   const peerConnection = useZustand((state) => state.peerConnection);
   const localStream = useZustand((state) => state.localStream);
@@ -52,10 +54,11 @@ export function MeetingPage() {
         isMuted: isAudio,
         isVideoOn: isVideo,
         initials: "rmaa",
+        stream:localStream
       }]);
     }
     // const mockParticipants = generateParticipants(1);
-  }, []);
+  }, [localStream,isAudio,isVideo]);
 
   const nextPage = () => {
     if ((currentPage + 1) * 6 < participants.length) {
