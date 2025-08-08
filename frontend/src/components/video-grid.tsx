@@ -50,7 +50,7 @@ export function VideoGrid({ participants, currentPage, onNextPage, onPrevPage }:
       {layout === "solo" ? (
         // Solo layout - just show the local user centered and large
         <div className="w-full max-w-4xl aspect-video">
-          {localUser && <VideoTile participant={localUser} size="large" />}
+          {localUser && <VideoTile participant={localUser}  size="large" />}
         </div>
       ) : (
         // Grid layout with other participants

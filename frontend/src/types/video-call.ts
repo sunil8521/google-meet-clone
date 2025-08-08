@@ -5,5 +5,6 @@ export interface Participant {
   isMuted: boolean
   isVideoOn: boolean
   initials: string
+  stream:MediaStream
   // color: string
 }

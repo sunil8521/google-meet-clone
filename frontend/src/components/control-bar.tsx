@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/themes//theme-provider"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import useZustand from "@/state/provider"
 
 interface ControlBarProps {
   isAudioOn: boolean
@@ -37,6 +38,12 @@ export function ControlBar({
   onToggleScreenShare,
   onToggleRecording,
 }: ControlBarProps) {
+
+  const isAudio=useZustand((state)=>state.isAudio)
+  const isVideo=useZustand((state)=>state.isVideo)
+  const toggleAudio=useZustand((state)=>state.toggleAudio)
+  const toggleVideo=useZustand((state)=>state.toggleVideo)
+
   const { theme } = useTheme()
 
   const buttonClass = `h-12 w-12 rounded-full transition-all duration-200 ${
@@ -56,10 +63,10 @@ export function ControlBar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className={isAudioOn ? buttonClass : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`}
-              onClick={onToggleAudio}
+              className={isAudio ? buttonClass : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`}
+              onClick={toggleAudio}
             >
-              {isAudioOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+              {isAudio ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
             </Button>
           </DropdownMenuTrigger>
         </DropdownMenu>
@@ -68,10 +75,10 @@ export function ControlBar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className={isVideoOn ? buttonClass : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`}
-              onClick={onToggleVideo}
+              className={isVideo ? buttonClass : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`}
+              onClick={toggleVideo}
             >
-              {isVideoOn ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+              {isVideo ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
             </Button>
           </DropdownMenuTrigger>
         </DropdownMenu>
