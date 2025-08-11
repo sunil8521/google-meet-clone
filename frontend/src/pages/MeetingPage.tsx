@@ -1,34 +1,94 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { VideoGrid } from "@/components/video-grid";
 import { ControlBar } from "@/components/control-bar";
 import { useTheme } from "@/themes/theme-provider";
 import type { Participant } from "@/types/video-call";
-import { generateParticipants } from "@/types/mock";
+import { generateParticipants, getColor } from "@/types/mock";
 import { ChatPanel } from "@/components/chat-panel";
 import { ParticipantsPanel } from "@/components/participants-panel";
 import useZustand from "@/state/provider";
+import useParticipantsStore from "@/state/participantsStore";
+import { useLocation } from "react-router-dom";
+
 export function MeetingPage() {
   const { theme } = useTheme();
+  const { state } = useLocation();
 
-  
   const socket = useZustand((state) => state.socket);
   const peerConnection = useZustand((state) => state.peerConnection);
   const localStream = useZustand((state) => state.localStream);
   const isAudio = useZustand((state) => state.isAudio);
   const isVideo = useZustand((state) => state.isVideo);
 
-  const [isAudioOn, setIsAudioOn] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
-  const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  // const setCurrentUserId=useParticipantsStore((state)=>state.setCurrentUserId)
+  // const addParticipant=useParticipantsStore((state)=>state.addParticipant)
+  // const updateParticipant=useParticipantsStore((state) => state.updateParticipant);
+  // const updateCurrentUserStream=useParticipantsStore((state) => state.updateCurrentUserStream);
+
+  const {
+    setCurrentUserId,
+    addParticipant,
+    updateParticipant,
+    updateCurrentUserStream,
+  } = useParticipantsStore();
+
+  const currentUserId = useParticipantsStore((state) => state.currentUserId);
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
+
+  // Participants selector ready for when needed (currently components are commented out)
+  const participantsMap = useParticipantsStore((state) => state.participants);
+
+  const participants = useMemo(
+    () => Array.from(participantsMap.values()),
+    [participantsMap]
+  );
+
+  // console.log(participants);
+
+  useEffect(() => {
+  if (!socket?.id || !state?.name) return;
+      setCurrentUserId(socket.id);
+      console.log("i set ");
+      addParticipant({
+        id: socket.id,
+        name: state.name,
+        isVideoOn: isVideo,
+        isAudioOn: isAudio,
+        stream: localStream,
+        isLocal: true,
+      });
+    
+  }, [socket?.id, state?.name]);
+  useEffect(() => {
+    if (localStream && currentUserId) {
+      updateCurrentUserStream(localStream);
+    }
+  }, [localStream, currentUserId, updateCurrentUserStream]);
+  useEffect(() => {
+    if (!currentUserId) return;
+    updateParticipant(currentUserId, {
+      isAudioOn: isAudio,
+      isVideoOn: isVideo,
+    });
+  }, [isAudio, isVideo, currentUserId]);
+  // useEffect(() => {
+  //   if (currentUserId) {
+  //     updateParticipant(currentUserId, { isAudioOn: isAudio });
+  //   }
+  // }, [isAudio, currentUserId]);
+
+  // useEffect(() => {
+  //   if (currentUserId) {
+  //     updateParticipant(currentUserId, { isVideoOn: isVideo });
+  //   }
+  // }, [isVideo, currentUserId]);
 
   useEffect(() => {
     if (!socket?.connected || !peerConnection) return;
+
     socket.on("user-joined", async (data) => {
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
@@ -44,32 +104,6 @@ export function MeetingPage() {
     };
   }, [socket, peerConnection]);
 
-  useEffect(() => {
-    if (localStream) {
-      console.log("local stream")
-      setParticipants([{
-        id: "1",
-        name: "random",
-        isLocal: true,
-        isMuted: isAudio,
-        isVideoOn: isVideo,
-        initials: "rmaa",
-        stream:localStream
-      }]);
-    }
-    // const mockParticipants = generateParticipants(1);
-  }, [localStream,isAudio,isVideo]);
-
-  const nextPage = () => {
-    if ((currentPage + 1) * 6 < participants.length) {
-      setCurrentPage((prev) => prev + 1);
-    }
-  };
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage((prev) => prev - 1);
-    }
-  };
   return (
     <main className="min-h-screen">
       <div
@@ -81,19 +115,14 @@ export function MeetingPage() {
 
         <div className="flex flex-1 overflow-hidden ">
           <div className="flex-1 relative">
-            <VideoGrid
-              participants={participants}
-              currentPage={currentPage}
-              onNextPage={nextPage}
-              onPrevPage={prevPage}
-            />
+            <VideoGrid participants={participants} />
           </div>
           {isChatOpen && (
             <div className="w-80 border-l border-gray-700">
               <ChatPanel onClose={() => setIsChatOpen(false)} />
             </div>
           )}
-
+          {/* 
           {isParticipantsOpen && (
             <div className="w-80 border-l border-gray-700">
               <ParticipantsPanel
@@ -101,19 +130,10 @@ export function MeetingPage() {
                 onClose={() => setIsParticipantsOpen(false)}
               />
             </div>
-          )}
+          )} */}
         </div>
 
-        <ControlBar
-          isAudioOn={isAudioOn}
-          isVideoOn={isVideoOn}
-          isScreenSharing={isScreenSharing}
-          isRecording={isRecording}
-          onToggleAudio={() => setIsAudioOn(!isAudioOn)}
-          onToggleVideo={() => setIsVideoOn(!isVideoOn)}
-          onToggleScreenShare={() => setIsScreenSharing(!isScreenSharing)}
-          onToggleRecording={() => setIsRecording(!isRecording)}
-        />
+        <ControlBar />
       </div>
     </main>
   );

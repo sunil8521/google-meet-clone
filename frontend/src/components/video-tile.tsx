@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { Participant } from "@/types/video-call";
-import { MicOff, Pin, MoreVertical } from "lucide-react";
+import { MicOff, Pin, MoreVertical, CameraOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useZustand from "@/state/provider";
 
@@ -8,22 +8,15 @@ interface VideoTileProps {
   participant: Participant;
   size: "small" | "medium" | "large";
   className?: string;
-  // stream: MediaStream
 }
 
 export function VideoTile({ participant, size, className }: VideoTileProps) {
-  const { isVideoOn, id, initials, isLocal, isMuted, name, stream } =
-    participant;
+  const { isVideoOn, id, isLocal, color, isAudioOn, name, stream } = participant;
   // const isAudio = useZustand((state) => state.isAudio);
   // const isVideo = useZustand((state) => state.isVideo);
-  const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   // Size classes
-  const sizeClasses = {
-    small: "h-full w-full",
-    medium: "h-full w-full",
-    large: "h-full w-full",
-  };
+
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
@@ -33,67 +26,47 @@ export function VideoTile({ participant, size, className }: VideoTileProps) {
     <div
       className={cn(
         "relative rounded-lg overflow-hidden bg-gray-800 transition-all duration-200",
-        sizeClasses[size],
+        "h-full w-full",
         className
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Video placeholder */}
-      {participant.isVideoOn ? (
-        <div
-          className="h-full w-full bg-gray-700"
-          style={{ backgroundColor: "red" }}
-        >
+      {isVideoOn ? (
+        <div className="h-full w-full bg-gray-700 aspect-video">
           <video
             ref={videoRef}
             autoPlay
             muted
             playsInline
-            className="w-full h-full object-cover scale-x-[-1]" // mirror effect
+            className="w-full h-full object-cover scale-x-[-1]"
           />
         </div>
       ) : (
         <div
-          className="h-full w-full flex items-center justify-center"
-          style={{ backgroundColor: "red" }}
+          className="px-4 h-full bg-gray-700 w-full py-2 rounded-xl text-white font-medium flex items-center justify-center text-center"
+          style={{
+            // background: `${"gray"}`,
+            minWidth: "120px",
+            wordBreak: "break-word",
+          }}
         >
-          <div className="h-20 w-20 rounded-full bg-gray-600 flex items-center justify-center text-2xl font-medium">
-            {participant.initials}
-          </div>
+          <CameraOff className="w-7 h-7" />
         </div>
       )}
-
-      {/* Participant name and controls overlay */}
-      <div
-        className={cn(
-          "absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/70 to-transparent",
-          isHovered ? "opacity-100" : "opacity-0 hover:opacity-100"
-        )}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{participant.name}</span>
-            {participant.isMuted && <MicOff className="h-4 w-4 text-red-500" />}
+      <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-sm">
+        {participant.name}
+      </div>
+      <div className="absolute top-2 right-2">
+        {!isAudioOn && (
+          <div className="bg-red-500 text-white p-1 rounded-full">
+            <MicOff className="h-4 w-4 text-white" />
           </div>
-
-          {isHovered && (
-            <div className="flex gap-1">
-              <button className="p-1 rounded-full hover:bg-gray-700/70">
-                <Pin className="h-4 w-4" />
-              </button>
-              <button className="p-1 rounded-full hover:bg-gray-700/70">
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Muted indicator */}
-      {participant.isMuted && !isHovered && (
-        <div className="absolute bottom-2 left-2">
-          <MicOff className="h-4 w-4 text-red-500" />
+      {isLocal && (
+        <div className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs">
+          You
         </div>
       )}
     </div>
