@@ -1,10 +1,10 @@
 export interface Participant {
-  id: string
-  name: string
-  isLocal: boolean
-  isMuted: boolean
-  isVideoOn: boolean
-  initials: string
-  stream:MediaStream
-  // color: string
+  id: string;
+  name: string;
+  isLocal: boolean;
+  isAudioOn: boolean;
+  isVideoOn: boolean;
+  stream: MediaStream|null;
+  color?: string;
+  joinedAt: Date;
 }

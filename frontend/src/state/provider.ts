@@ -6,6 +6,18 @@ type Types = {
   socket: Socket | null;
   peerConnection: RTCPeerConnection | null;
   localStream: null | MediaStream;
+  participants: Map<
+    string,
+    {
+      id: string;
+      name: string;
+      isVideoOn: boolean;
+      isAudioOn: boolean;
+      stream: MediaStream;
+      joinedAt: string;
+    }
+  >;
+  currentUserId: null | string;
   //actions
 
   toggleVideo: () => void;
@@ -13,6 +25,8 @@ type Types = {
   setSocket: (socket: Socket) => void;
   setPeerConnection: (peer: RTCPeerConnection) => void;
   setLocalStream: (stream: MediaStream) => void;
+  setCurrentUserId:(userId:string)=>void
+  addParticipant:(participant:any)=>void
 };
 
 const useZustand = create<Types>((set, get) => ({
@@ -21,6 +35,8 @@ const useZustand = create<Types>((set, get) => ({
   isVideo: true,
   isAudio: true,
   localStream: null,
+  currentUserId: null,
+  participants: new Map(),
 
   setSocket: (socket) => set({ socket }),
   setPeerConnection: (peer) => set({ peerConnection: peer }),
@@ -47,6 +63,22 @@ const useZustand = create<Types>((set, get) => ({
   setLocalStream: (stream: MediaStream) => {
     set({ localStream: stream });
   },
+
+    setCurrentUserId: (userId:string) => set({ currentUserId: userId }),
+
+ addParticipant: (participant) => set((state) => {
+      const newParticipants = new Map(state.participants);
+      newParticipants.set(participant.id, {
+        id: participant.id,
+        name: participant.name,
+        isVideoOn: participant.isVideoOn ?? true,
+        isAudioOn: participant.isAudioOn ?? true,
+        stream: participant.stream || null,
+        joinedAt: new Date(),
+        ...participant
+      });
+      return { participants: newParticipants };
+    }),
 }));
 
 export default useZustand;

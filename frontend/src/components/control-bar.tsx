@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Mic,
@@ -11,51 +11,39 @@ import {
   Phone,
   Settings,
   RepeatIcon as Record,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useTheme } from "@/themes//theme-provider"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import useZustand from "@/state/provider"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/themes//theme-provider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import useZustand from "@/state/provider";
 
-interface ControlBarProps {
-  isAudioOn: boolean
-  isVideoOn: boolean
-  isScreenSharing: boolean
-  isRecording: boolean
-  onToggleAudio: () => void
-  onToggleVideo: () => void
-  onToggleScreenShare: () => void
-  onToggleRecording: () => void
-}
 
-export function ControlBar({
-  isAudioOn,
-  isVideoOn,
-  isScreenSharing,
-  isRecording,
-  onToggleAudio,
-  onToggleVideo,
-  onToggleScreenShare,
-  onToggleRecording,
-}: ControlBarProps) {
 
-  const isAudio=useZustand((state)=>state.isAudio)
-  const isVideo=useZustand((state)=>state.isVideo)
-  const toggleAudio=useZustand((state)=>state.toggleAudio)
-  const toggleVideo=useZustand((state)=>state.toggleVideo)
+export function ControlBar() {
+  const isAudio = useZustand((state) => state.isAudio);
+  const isVideo = useZustand((state) => state.isVideo);
+  const toggleAudio = useZustand((state) => state.toggleAudio);
+  const toggleVideo = useZustand((state) => state.toggleVideo);
 
-  const { theme } = useTheme()
+  const { theme } = useTheme();
 
   const buttonClass = `h-12 w-12 rounded-full transition-all duration-200 ${
     theme === "dark" ? "hover:bg-gray-600" : "hover:bg-gray-200"
-  }`
+  }`;
 
-  const activeButtonClass = `h-12 w-12 rounded-full transition-all duration-200`
+  const activeButtonClass = `h-12 w-12 rounded-full transition-all duration-200`;
 
   return (
     <div
       className={`h-20 px-6 flex items-center justify-center border-t ${
-        theme === "dark" ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+        theme === "dark"
+          ? "bg-gray-800 border-gray-700"
+          : "bg-white border-gray-200"
       }`}
     >
       <div className="flex items-center space-x-4">
@@ -63,10 +51,18 @@ export function ControlBar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className={isAudio ? buttonClass : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`}
+              className={
+                isAudio
+                  ? buttonClass
+                  : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`
+              }
               onClick={toggleAudio}
             >
-              {isAudio ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+              {isAudio ? (
+                <Mic className="w-5 h-5" />
+              ) : (
+                <MicOff className="w-5 h-5" />
+              )}
             </Button>
           </DropdownMenuTrigger>
         </DropdownMenu>
@@ -75,20 +71,30 @@ export function ControlBar({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className={isVideo ? buttonClass : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`}
+              className={
+                isVideo
+                  ? buttonClass
+                  : `${activeButtonClass} bg-red-600 hover:bg-red-700 text-white`
+              }
               onClick={toggleVideo}
             >
-              {isVideo ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
+              {isVideo ? (
+                <Video className="w-5 h-5" />
+              ) : (
+                <VideoOff className="w-5 h-5" />
+              )}
             </Button>
           </DropdownMenuTrigger>
         </DropdownMenu>
 
         {/* Screen Share */}
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               className={
-                isScreenSharing ? `${activeButtonClass} bg-blue-600 hover:bg-blue-700 text-white` : buttonClass
+                isScreenSharing
+                  ? `${activeButtonClass} bg-blue-600 hover:bg-blue-700 text-white`
+                  : buttonClass
               }
               onClick={onToggleScreenShare}
             >
@@ -100,10 +106,14 @@ export function ControlBar({
             <DropdownMenuItem>Share Window</DropdownMenuItem>
             <DropdownMenuItem>Share Browser Tab</DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
 
         {/* Divider */}
-        <div className={`w-px h-8 ${theme === "dark" ? "bg-gray-600" : "bg-gray-300"}`} />
+        <div
+          className={`w-px h-8 ${
+            theme === "dark" ? "bg-gray-600" : "bg-gray-300"
+          }`}
+        />
 
         {/* Chat (simplified for 1-on-1) */}
         <Button className={buttonClass} variant="ghost">
@@ -111,7 +121,7 @@ export function ControlBar({
         </Button>
 
         {/* More Options */}
-        <DropdownMenu>
+        {/* <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className={buttonClass} variant="ghost">
               <MoreHorizontal className="w-5 h-5" />
@@ -127,10 +137,14 @@ export function ControlBar({
               Settings
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu> */}
 
         {/* Divider */}
-        <div className={`w-px h-8 ${theme === "dark" ? "bg-gray-600" : "bg-gray-300"}`} />
+        <div
+          className={`w-px h-8 ${
+            theme === "dark" ? "bg-gray-600" : "bg-gray-300"
+          }`}
+        />
 
         {/* End Call */}
         <Button className="h-12 w-12 rounded-full bg-red-600 hover:bg-red-700 text-white">
@@ -139,12 +153,12 @@ export function ControlBar({
       </div>
 
       {/* Recording Indicator */}
-      {isRecording && (
+      {/* {isRecording && (
         <div className="absolute top-4 left-6 flex items-center space-x-2 text-red-500">
           <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
           <span className="text-sm font-medium">Recording</span>
         </div>
-      )}
+      )} */}
     </div>
-  )
+  );
 }
