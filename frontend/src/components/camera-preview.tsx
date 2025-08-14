@@ -3,9 +3,6 @@ import { Camera, CameraOff, User } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useTheme } from "../themes/theme-provider";
 import useZustand from "@/state/provider";
-interface CameraPreviewProps {
-  userName: string;
-}
 
 export function CameraPreview() {
   const isVideo = useZustand((state) => state.isVideo);
@@ -16,31 +13,7 @@ export function CameraPreview() {
   const { theme } = useTheme();
   // const [isHovered, setIsHovered] = useState(false);
 
-  useEffect(() => {
-    // Initialize getUserMedia
-    const initializeMedia = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
-        });
-        console.log(stream);
-        setLocalStream(stream);
-        // initializePeerConnection();
-      } catch (error) {
-        console.error("Error accessing media devices:", error);
-      }
-    };
 
-    initializeMedia();
-
-    // Cleanup on unmount
-    return () => {
-      if (localStream) {
-        localStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
   useEffect(() => {
     if (videoRef.current && localStream) {
       videoRef.current.srcObject = localStream;

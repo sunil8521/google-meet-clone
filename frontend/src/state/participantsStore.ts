@@ -22,11 +22,11 @@ const useParticipantsStore = create<Types>()(
     addParticipant: (participant) =>
       set((state) => {
         const newParticipants = new Map(state.participants);
-        newParticipants.set(participant.id, {
+        newParticipants.set(participant.id!, {
           id: participant.id,
           name: participant.name,
-          isVideoOn: participant.isVideoOn ?? true,
-          isAudioOn: participant.isAudioOn ?? true,
+          isVideoOn: participant.isVideoOn ,
+          isAudioOn: participant.isAudioOn,
           stream: participant.stream || null,
           joinedAt: new Date(),
           isLocal: participant.isLocal,
