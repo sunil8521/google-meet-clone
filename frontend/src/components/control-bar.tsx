@@ -22,13 +22,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import useZustand from "@/state/provider";
 
-
-
 export function ControlBar() {
   const isAudio = useZustand((state) => state.isAudio);
   const isVideo = useZustand((state) => state.isVideo);
-  const toggleAudio = useZustand((state) => state.toggleAudio);
-  const toggleVideo = useZustand((state) => state.toggleVideo);
+  const { toggleAudio, toggleVideo } = useZustand();
 
   const { theme } = useTheme();
 

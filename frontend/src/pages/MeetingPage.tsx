@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, use } from "react";
 import { Header } from "@/components/Header";
 import { VideoGrid } from "@/components/video-grid";
 import { ControlBar } from "@/components/control-bar";
@@ -21,11 +21,6 @@ export function MeetingPage() {
   const isAudio = useZustand((state) => state.isAudio);
   const isVideo = useZustand((state) => state.isVideo);
 
-  // const setCurrentUserId=useParticipantsStore((state)=>state.setCurrentUserId)
-  // const addParticipant=useParticipantsStore((state)=>state.addParticipant)
-  // const updateParticipant=useParticipantsStore((state) => state.updateParticipant);
-  // const updateCurrentUserStream=useParticipantsStore((state) => state.updateCurrentUserStream);
-
   const {
     setCurrentUserId,
     addParticipant,
@@ -34,11 +29,9 @@ export function MeetingPage() {
   } = useParticipantsStore();
 
   const currentUserId = useParticipantsStore((state) => state.currentUserId);
-
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
-
-  // Participants selector ready for when needed (currently components are commented out)
+  const [loading, setLoading] = useState<boolean>(false);
   const participantsMap = useParticipantsStore((state) => state.participants);
 
   const participants = useMemo(
@@ -46,22 +39,24 @@ export function MeetingPage() {
     [participantsMap]
   );
 
-  // console.log(participants);
-
   useEffect(() => {
-  if (!socket?.id || !state?.name) return;
-      setCurrentUserId(socket.id);
-      console.log("i set ");
-      addParticipant({
-        id: socket.id,
-        name: state.name,
-        isVideoOn: isVideo,
-        isAudioOn: isAudio,
-        stream: localStream,
-        isLocal: true,
-      });
-    
+    if (!socket?.id || !state?.name) return;
+    setCurrentUserId(socket.id);
+
+    addParticipant({
+      id: socket.id,
+      name: state.name,
+      isVideoOn: isVideo,
+      isAudioOn: isAudio,
+      stream: localStream,
+      isLocal: true,
+    });
+
+    if (state.role === "joiner") {
+      setLoading(false);
+    }
   }, [socket?.id, state?.name]);
+
   useEffect(() => {
     if (localStream && currentUserId) {
       updateCurrentUserStream(localStream);
@@ -73,37 +68,9 @@ export function MeetingPage() {
       isAudioOn: isAudio,
       isVideoOn: isVideo,
     });
-  }, [isAudio, isVideo, currentUserId]);
-  // useEffect(() => {
-  //   if (currentUserId) {
-  //     updateParticipant(currentUserId, { isAudioOn: isAudio });
-  //   }
-  // }, [isAudio, currentUserId]);
+  }, [isAudio, isVideo, currentUserId,updateParticipant]);
 
-  // useEffect(() => {
-  //   if (currentUserId) {
-  //     updateParticipant(currentUserId, { isVideoOn: isVideo });
-  //   }
-  // }, [isVideo, currentUserId]);
-
-  useEffect(() => {
-    if (!socket?.connected || !peerConnection) return;
-
-    socket.on("user-joined", async (data) => {
-      const offer = await peerConnection.createOffer();
-      await peerConnection.setLocalDescription(offer);
-      socket.emit("signal", {
-        type: "offer",
-        webRtcData: offer,
-        to: data.socketId, // target peer
-        from: socket.id, // your socket ID
-      });
-    });
-    return () => {
-      socket.off("user-joined");
-    };
-  }, [socket, peerConnection]);
-
+ 
   return (
     <main className="min-h-screen">
       <div
@@ -115,15 +82,21 @@ export function MeetingPage() {
 
         <div className="flex flex-1 overflow-hidden ">
           <div className="flex-1 relative">
-            <VideoGrid participants={participants} />
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <span className="text-gray-500">Loading...</span>
+              </div>
+            ) : (
+              <VideoGrid participants={participants} />
+            )}
           </div>
-          {isChatOpen && (
+          {/* {isChatOpen && (
             <div className="w-80 border-l border-gray-700">
               <ChatPanel onClose={() => setIsChatOpen(false)} />
             </div>
-          )}
-          {/* 
-          {isParticipantsOpen && (
+          )} */}
+
+          {/* {isParticipantsOpen && (
             <div className="w-80 border-l border-gray-700">
               <ParticipantsPanel
                 participants={participants}

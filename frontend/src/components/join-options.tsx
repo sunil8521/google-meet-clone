@@ -62,8 +62,11 @@ export function JoinOptions() {
       roomId: roomID,
       name: username,
     });
-    navigate(`/join/${roomID}`, { state: { roomId: roomID, name: username } });
+    navigate(`/join/${roomID}`, { state: { roomId: roomID, name: username,role:"creator" } });
   };
+
+
+  
   const handleJoinMeeting = () => {
     const username = usernameRef.current?.value.trim();
     const roomID = roomidRef.current?.value.trim();
@@ -77,10 +80,11 @@ export function JoinOptions() {
       return;
     }
     socket?.emit("join-room", {
-      userId: "null",
       roomId: roomID,
       name: username,
     });
+        navigate(`/join/${roomID}`, { state: { roomId: roomID, name: username,role:"joiner" } });
+
   };
 
   return (
