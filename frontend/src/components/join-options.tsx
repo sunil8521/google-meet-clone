@@ -35,21 +35,21 @@ export function JoinOptions() {
   const roomidRef = useRef<HTMLInputElement | null>(null);
 
   const isJoining = false;
-  
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText("https://videomeet.app/join/abc-def-ghi");
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  useEffect(() => {
-    if (!socket?.connected) return;
-    socket.on("socket-error", (data: { message: string }) => {
-      toast.error(data.message);
-    });
-    return () => {
-      socket.off("socket-error");
-    };
-  }, [socket]);
+  // useEffect(() => {
+  //   if (!socket?.connected) return;
+  //   socket.on("socket-error", (data: { message: string }) => {
+  //     toast.error(data.message);
+  //   });
+  //   return () => {
+  //     socket.off("socket-error");
+  //   };
+  // }, [socket]);
 
   const handleCreateMeeting = () => {
     const roomID = generateCode();
@@ -62,11 +62,11 @@ export function JoinOptions() {
       roomId: roomID,
       name: username,
     });
-    navigate(`/join/${roomID}`, { state: { roomId: roomID, name: username,role:"creator" } });
+    navigate(`/join/${roomID}`, {
+      state: { roomId: roomID, name: username, role: "creator" },
+    });
   };
 
-
-  
   const handleJoinMeeting = () => {
     const username = usernameRef.current?.value.trim();
     const roomID = roomidRef.current?.value.trim();
@@ -83,8 +83,15 @@ export function JoinOptions() {
       roomId: roomID,
       name: username,
     });
-        navigate(`/join/${roomID}`, { state: { roomId: roomID, name: username,role:"joiner" } });
 
+    socket?.emit("check-room", roomID, (response) => {
+      console.log("res");
+      if (response.valid) {
+        navigate(`/join/${roomID}`, {
+          state: { roomId: roomID, name: username, role: "joiner" },
+        });
+      }
+    });
   };
 
   return (

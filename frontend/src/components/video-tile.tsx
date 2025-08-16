@@ -15,6 +15,8 @@ export function VideoTile({ participant, size, className }: VideoTileProps) {
   // const isAudio = useZustand((state) => state.isAudio);
   // const isVideo = useZustand((state) => state.isVideo);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  console.log("audio  -"+isAudioOn)
+  console.log("video  -"+isVideoOn)
   // Size classes
 
   useEffect(() => {

@@ -29,10 +29,12 @@ export function MeetingPage() {
   } = useParticipantsStore();
 
   const currentUserId = useParticipantsStore((state) => state.currentUserId);
+  const loading=useZustand((state)=>state.loading)
+  const setLoading=useZustand((state)=>state.setLoading)
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
-  const [loading, setLoading] = useState<boolean>(false);
   const participantsMap = useParticipantsStore((state) => state.participants);
+
 
   const participants = useMemo(
     () => Array.from(participantsMap.values()),

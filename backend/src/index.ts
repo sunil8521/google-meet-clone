@@ -55,6 +55,14 @@ const getRoomStats = () => {
   }));
   return stats;
 };
+const getUserdetails = (
+  roomId: string,
+  socketId: string
+): string | undefined => {
+  const room = ROOMS.get(roomId);
+  const userDetails = room?.get(socketId);
+  return userDetails?.name;
+};
 
 io.on("connection", (socket) => {
   console.log("🔌 User connected:", socket.id);
@@ -105,6 +113,12 @@ io.on("connection", (socket) => {
       participantCount: room.size,
     });
   });
+
+  socket.on("check-room", (roomId, callback) => {
+    const roomExists = ROOMS.has(roomId);
+    callback({ valid: roomExists });
+  });
+
   socket.on(
     "signal",
     (data: { type: string; webRtcData: any; to: string; from: string }) => {
@@ -121,11 +135,12 @@ io.on("connection", (socket) => {
         });
         return;
       }
-// console.log(data)
+      const name = getUserdetails(currentRoomId as string, from);
       socket.to(to).emit("signal", {
         type,
         webRtcData,
         from,
+        name,
       });
     }
   );
@@ -155,7 +170,6 @@ app.get("/", (req, res) => {
   res.json({ message: "WebRTC Server is running!" });
 });
 app.get("/api/rooms", (req, res) => {
-
   res.json({
     totalRooms: ROOMS.size,
     rooms: getRoomStats(),
@@ -163,5 +177,4 @@ app.get("/api/rooms", (req, res) => {
 });
 server.listen(3000, () => {
   console.log("server is running on 3000");
-
 });
