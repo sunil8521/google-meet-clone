@@ -1,6 +1,6 @@
 //modules
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 
 // from files
@@ -14,7 +14,6 @@ const JoinMeetingPage = lazy(() => import("@/pages/JoinMeetingPage"));
 const MeetingPage = lazy(() => import("@/pages/MeetingPage"));
 import useParticipantsStore from "@/state/participantsStore";
 
-
 function App() {
   const setSocket = useZustand((state) => state.setSocket);
   const peerConnection = useZustand((state) => state.peerConnection);
@@ -23,8 +22,10 @@ function App() {
   const localStream = useZustand((state) => state.localStream);
   const setLocalStream = useZustand((state) => state.setLocalStream);
   const addParticipant = useParticipantsStore((state) => state.addParticipant);
-
-  console.log(localStream);
+  const pendingParticipantsRef = useRef<
+    Map<string, { name: string; socketId: string }>
+  >(new Map()); // Track pending connections
+console.log(pendingParticipantsRef)
   useEffect(() => {
     const initializeMedia = async () => {
       try {
@@ -38,17 +39,13 @@ function App() {
         const error = err as DOMException;
         if (error.name === "NotReadableError") {
           console.warn("Camera/mic in use, joining without them");
-          const emptyStream = new MediaStream();
-          setLocalStream(emptyStream);
         } else if (error.name === "NotAllowedError") {
           console.warn("Permission denied, joining without them");
-          const emptyStream = new MediaStream();
-          setLocalStream(emptyStream);
         } else {
           console.error("Error accessing media devices:", error);
-          const emptyStream = new MediaStream();
-          setLocalStream(emptyStream);
         }
+        const emptyStream = new MediaStream();
+        setLocalStream(emptyStream);
 
         useZustand.setState({ isVideo: false, isAudio: false });
       }
@@ -62,11 +59,18 @@ function App() {
       }
     };
   }, [setLocalStream]);
-  
-useEffect(() => {
+
+  useEffect(() => {
     if (!peerConnection || !localStream) return;
 
     console.log("📹 Adding local stream to peer connection");
+
+    // Clear existing tracks to avoid duplicates
+    peerConnection.getSenders().forEach((sender) => {
+      if (sender.track) {
+        peerConnection.removeTrack(sender);
+      }
+    });
     localStream.getTracks().forEach((track) => {
       peerConnection.addTrack(track, localStream);
     });
@@ -75,11 +79,9 @@ useEffect(() => {
   useEffect(() => {
     console.log("🔗 Initializing socket connection");
     setSocket(socket);
-    // if (!socket.connected) {
-    //   socket.connect();
-    // }
+
     if (!peerConnection) return;
-   
+
     peerConnection.onconnectionstatechange = () => {
       console.log("🔗 Connection state:", peerConnection.connectionState);
     };
@@ -106,36 +108,72 @@ useEffect(() => {
       }
     };
 
-  peerConnection.ontrack = (event) => {
-     console.log("📡 Remote track received");
- 
-     const remoteStream = event.streams[0];
-     console.log("📡 Remote stream:", remoteStream);
-     if (!remoteStream) return;
- 
-     // Add or update remote participant
-     addParticipant({
-       id: "id", // ideally from signaling (socket.id)
-       name: "Guest", // from signaling
-       isVideoOn: true,
-       isAudioOn: true,
-       stream: remoteStream,
-       isLocal: false,
-     });
- 
-     // // Stop showing loader
-    //  setLoading(false);
-   };
+    peerConnection.ontrack = (event) => {
+      //  console.log("📡 Remote track received");
+
+      const remoteStream = event.streams[0];
+      //  console.log("📡 Remote stream:", remoteStream);
+
+      // Add or update remote participant
+
+         const peerId = currentPeerIdRef.current;
+        const pendingInfo = pendingParticipantsRef.current.get(peerId);
+      addParticipant({
+        id: pendingInfo?.socketId, // ideally from signaling (socket.id)
+        name: pendingInfo?.name, // from signaling
+        isVideoOn: remoteStream.getVideoTracks().some((track) => track.enabled),
+        isAudioOn: remoteStream.getAudioTracks().some((track) => track.enabled),
+        stream: remoteStream,
+        isLocal: false,
+      });
+
+      // // Stop showing loader
+      //  setLoading(false);
+    };
+
+    // Handle data channel for users without media tracks
+    peerConnection.ondatachannel = (event) => {
+      const channel = event.channel;
+      console.log("📡 Data channel received:", channel.label);
+
+      channel.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "user-info") {
+            console.log("👤 Received user info via data channel:", data);
+
+            // Add participant even if they don't have media stream
+            addParticipant({
+              id: data.socketId,
+              name: data.name || "Guest",
+              isVideoOn: false,
+              isAudioOn: false,
+              stream: new MediaStream(), // Empty stream
+              isLocal: false,
+            });
+
+            // setLoading(false);
+          }
+        } catch (error) {
+          console.error("Error parsing data channel message:", error);
+        }
+      };
+    };
+
     socket.on("signal", async (data) => {
       if (!peerConnection) return;
       try {
         if (data.type == "offer") {
           currentPeerIdRef.current = data.from;
-
+          // who sent offer (creater)
+          pendingParticipantsRef.current.set(data.from, {
+            name: data.name,
+            socketId: data.from,
+          });
+          console.log(pendingParticipantsRef)
           await peerConnection.setRemoteDescription(data.webRtcData);
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);
-          console.log("i recive offer");
           socket.emit("signal", {
             type: "answer",
             webRtcData: answer,
@@ -143,10 +181,13 @@ useEffect(() => {
             from: socket.id,
           });
         } else if (data.type == "answer") {
-          console.log("i receive answer");
+          // who sent answer (joiner)
+          pendingParticipantsRef.current.set(data.from, {
+            name: data.name,
+            socketId: data.from,
+          });
           await peerConnection.setRemoteDescription(data.webRtcData);
         } else if (data.type === "ice-candidate") {
-          console.log("i seent ice---");
           await peerConnection.addIceCandidate(data.webRtcData);
         }
       } catch (er) {
@@ -159,7 +200,7 @@ useEffect(() => {
 
       try {
         console.log("👋 User joined:", data.socketId);
-        // Store who we're connecting to
+        // Store who we're connecting to (joiner)
         currentPeerIdRef.current = data.socketId;
 
         const offer = await peerConnection.createOffer();
