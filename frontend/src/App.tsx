@@ -14,6 +14,7 @@ const JoinMeetingPage = lazy(() => import("@/pages/JoinMeetingPage"));
 const MeetingPage = lazy(() => import("@/pages/MeetingPage"));
 import useParticipantsStore from "@/state/participantsStore";
 
+
 function App() {
   const setSocket = useZustand((state) => state.setSocket);
   const peerConnection = useZustand((state) => state.peerConnection);
@@ -22,10 +23,12 @@ function App() {
   const localStream = useZustand((state) => state.localStream);
   const setLocalStream = useZustand((state) => state.setLocalStream);
   const addParticipant = useParticipantsStore((state) => state.addParticipant);
+  const setLoading = useZustand((state) => state.setLoading);
+  const loading = useZustand((state) => state.loading);
   const pendingParticipantsRef = useRef<
     Map<string, { name: string; socketId: string }>
   >(new Map()); // Track pending connections
-console.log(pendingParticipantsRef)
+
   useEffect(() => {
     const initializeMedia = async () => {
       try {
@@ -60,10 +63,11 @@ console.log(pendingParticipantsRef)
     };
   }, [setLocalStream]);
 
+
   useEffect(() => {
     if (!peerConnection || !localStream) return;
 
-    console.log("📹 Adding local stream to peer connection");
+    // console.log("📹 Adding local stream to peer connection");
 
     // Clear existing tracks to avoid duplicates
     peerConnection.getSenders().forEach((sender) => {
@@ -77,7 +81,7 @@ console.log(pendingParticipantsRef)
   }, [peerConnection, localStream]);
 
   useEffect(() => {
-    console.log("🔗 Initializing socket connection");
+    // console.log("🔗 Initializing socket connection");
     setSocket(socket);
 
     if (!peerConnection) return;
@@ -87,13 +91,13 @@ console.log(pendingParticipantsRef)
     };
 
     peerConnection.oniceconnectionstatechange = () => {
-      console.log(
-        "🧊 ICE connection state:",
-        peerConnection.iceConnectionState
-      );
+      // console.log(
+      //   "🧊 ICE connection state:",
+      //   peerConnection.iceConnectionState
+      // );
     };
     peerConnection.onicecandidate = (event) => {
-      console.log("🧊 ICE candidate generated");
+      // console.log("🧊 ICE candidate generated");
       if (event.candidate && currentPeerIdRef.current) {
         socket.emit("signal", {
           type: "ice-candidate",
@@ -117,7 +121,7 @@ console.log(pendingParticipantsRef)
       // Add or update remote participant
 
          const peerId = currentPeerIdRef.current;
-        const pendingInfo = pendingParticipantsRef.current.get(peerId);
+        const pendingInfo = pendingParticipantsRef.current.get(peerId!);
       addParticipant({
         id: pendingInfo?.socketId, // ideally from signaling (socket.id)
         name: pendingInfo?.name, // from signaling
@@ -126,10 +130,8 @@ console.log(pendingParticipantsRef)
         stream: remoteStream,
         isLocal: false,
       });
-
-      // // Stop showing loader
-      //  setLoading(false);
-    };
+       setLoading(false);
+      };
 
     // Handle data channel for users without media tracks
     peerConnection.ondatachannel = (event) => {
@@ -164,6 +166,8 @@ console.log(pendingParticipantsRef)
       if (!peerConnection) return;
       try {
         if (data.type == "offer") {
+          console.log("offer recive")
+          setLoading(true);
           currentPeerIdRef.current = data.from;
           // who sent offer (creater)
           pendingParticipantsRef.current.set(data.from, {
@@ -218,7 +222,7 @@ console.log(pendingParticipantsRef)
       }
     });
     socket.on("connect", () => {
-      console.log("Connected to server:", socket.id);
+      // console.log("Connected to server:", socket.id);
     });
 
     socket.on("disconnect", () => {

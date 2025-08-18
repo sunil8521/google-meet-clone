@@ -85,8 +85,7 @@ export function JoinOptions() {
     });
 
     socket?.emit("check-room", roomID, (response) => {
-      console.log("res");
-      if (response.valid) {
+        if (response.valid) {
         navigate(`/join/${roomID}`, {
           state: { roomId: roomID, name: username, role: "joiner" },
         });

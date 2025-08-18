@@ -34,7 +34,7 @@ export function MeetingPage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const participantsMap = useParticipantsStore((state) => state.participants);
-
+console.log(loading)
 
   const participants = useMemo(
     () => Array.from(participantsMap.values()),
@@ -54,9 +54,9 @@ export function MeetingPage() {
       isLocal: true,
     });
 
-    if (state.role === "joiner") {
-      setLoading(false);
-    }
+    // if (state.role === "joiner") {
+    //   setLoading(true);
+    // }
   }, [socket?.id, state?.name]);
 
   useEffect(() => {

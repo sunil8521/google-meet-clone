@@ -7,7 +7,7 @@ type Types = {
   peerConnection: RTCPeerConnection | null;
   localStream: null | MediaStream;
   loading: boolean;
-  
+  rtcDatachannel: RTCDataChannel | null;
 
   //actions
 
@@ -18,6 +18,7 @@ type Types = {
   setPeerConnection: (peer: RTCPeerConnection) => void;
   setLocalStream: (stream: MediaStream) => void;
   resetPeerConnection: () => void;
+  setRtcDatachannel: (data: RTCDataChannel) => void;
 };
 
 const useZustand = create<Types>((set, get) => ({
@@ -36,8 +37,9 @@ const useZustand = create<Types>((set, get) => ({
   isAudio: true,
   localStream: null,
   loading: false,
+  rtcDatachannel: null,
 
-  setLoading: (val:boolean) => {
+  setLoading: (val: boolean) => {
     set({ loading: val });
   },
   setSocket: (socket) => set({ socket }),
@@ -71,6 +73,9 @@ const useZustand = create<Types>((set, get) => ({
         iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
       }),
     }),
+  setRtcDatachannel: (data) => {
+    set({ rtcDatachannel: data });
+  },
 }));
 
 export default useZustand;
