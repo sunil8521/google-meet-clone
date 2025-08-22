@@ -14,7 +14,6 @@ const JoinMeetingPage = lazy(() => import("@/pages/JoinMeetingPage"));
 const MeetingPage = lazy(() => import("@/pages/MeetingPage"));
 import useParticipantsStore from "@/state/participantsStore";
 
-
 function App() {
   const setSocket = useZustand((state) => state.setSocket);
   const peerConnection = useZustand((state) => state.peerConnection);
@@ -22,13 +21,19 @@ function App() {
 
   const localStream = useZustand((state) => state.localStream);
   const setLocalStream = useZustand((state) => state.setLocalStream);
-  const addParticipant = useParticipantsStore((state) => state.addParticipant);
+   const addParticipant = useParticipantsStore((state) => state.addParticipant);
   const setLoading = useZustand((state) => state.setLoading);
-  const loading = useZustand((state) => state.loading);
+  // const loading = useZustand((state) => state.loading);
+  const setRtcDatachannel = useZustand((state) => state.setRtcDatachannel);
   const pendingParticipantsRef = useRef<
     Map<string, { name: string; socketId: string }>
   >(new Map()); // Track pending connections
-
+ const { 
+    setCurrentUserId,
+    
+    updateParticipant,
+    updateCurrentUserStream,
+  } = useParticipantsStore();
   useEffect(() => {
     const initializeMedia = async () => {
       try {
@@ -63,12 +68,8 @@ function App() {
     };
   }, [setLocalStream]);
 
-
   useEffect(() => {
     if (!peerConnection || !localStream) return;
-
-    // console.log("📹 Adding local stream to peer connection");
-
     // Clear existing tracks to avoid duplicates
     peerConnection.getSenders().forEach((sender) => {
       if (sender.track) {
@@ -87,17 +88,13 @@ function App() {
     if (!peerConnection) return;
 
     peerConnection.onconnectionstatechange = () => {
-      console.log("🔗 Connection state:", peerConnection.connectionState);
+      // console.log("🔗 Connection state:", peerConnection.connectionState);
     };
 
     peerConnection.oniceconnectionstatechange = () => {
-      // console.log(
-      //   "🧊 ICE connection state:",
-      //   peerConnection.iceConnectionState
-      // );
+      // console.log("🧊 ICE connection state:", peerConnection.iceConnectionState);
     };
     peerConnection.onicecandidate = (event) => {
-      // console.log("🧊 ICE candidate generated");
       if (event.candidate && currentPeerIdRef.current) {
         socket.emit("signal", {
           type: "ice-candidate",
@@ -120,18 +117,37 @@ function App() {
 
       // Add or update remote participant
 
-         const peerId = currentPeerIdRef.current;
-        const pendingInfo = pendingParticipantsRef.current.get(peerId!);
+      const peerId = currentPeerIdRef.current;
+      const pendingInfo = pendingParticipantsRef.current.get(peerId!);
+      const hasVideoTracks = remoteStream.getVideoTracks().length > 0;
+      const hasAudioTracks = remoteStream.getAudioTracks().length > 0;
       addParticipant({
         id: pendingInfo?.socketId, // ideally from signaling (socket.id)
         name: pendingInfo?.name, // from signaling
-        isVideoOn: remoteStream.getVideoTracks().some((track) => track.enabled),
-        isAudioOn: remoteStream.getAudioTracks().some((track) => track.enabled),
+        isVideoOn:
+          hasVideoTracks &&
+          remoteStream.getVideoTracks().some((track) => track.enabled),
+        isAudioOn:
+          hasAudioTracks &&
+          remoteStream.getAudioTracks().some((track) => track.enabled),
         stream: remoteStream,
         isLocal: false,
       });
-       setLoading(false);
-      };
+       remoteStream.getVideoTracks().forEach(track => {
+    track.addEventListener('ended', () => {
+      console.log('📹 Video track ended');
+      updateParticipant(pendingInfo!.socketId, { isVideoOn: false });
+    });
+  });
+
+  remoteStream.getAudioTracks().forEach(track => {
+    track.addEventListener('ended', () => {
+      console.log('🎤 Audio track ended');
+      updateParticipant(pendingInfo!.socketId, { isAudioOn: false });
+    });
+  });
+      setLoading(false);
+    };
 
     // Handle data channel for users without media tracks
     peerConnection.ondatachannel = (event) => {
@@ -166,7 +182,6 @@ function App() {
       if (!peerConnection) return;
       try {
         if (data.type == "offer") {
-          console.log("offer recive")
           setLoading(true);
           currentPeerIdRef.current = data.from;
           // who sent offer (creater)
@@ -174,7 +189,11 @@ function App() {
             name: data.name,
             socketId: data.from,
           });
-          console.log(pendingParticipantsRef)
+          peerConnection.ondatachannel = (event) => {
+            const dataChannel = event.channel;
+            setRtcDatachannel(dataChannel);
+          };
+
           await peerConnection.setRemoteDescription(data.webRtcData);
           const answer = await peerConnection.createAnswer();
           await peerConnection.setLocalDescription(answer);

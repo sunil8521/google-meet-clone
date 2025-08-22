@@ -29,6 +29,9 @@ export function JoinOptions() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const socket = useZustand((state) => state.socket);
+  const peerConnection = useZustand((state) => state.peerConnection);
+  const setRtcDatachannel = useZustand((state) => state.setRtcDatachannel);
+
   const [copied, setCopied] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
   const usernameRef = useRef<HTMLInputElement | null>(null);
@@ -62,6 +65,9 @@ export function JoinOptions() {
       roomId: roomID,
       name: username,
     });
+    if (peerConnection) {
+      setRtcDatachannel(peerConnection.createDataChannel("chat"));
+    }
     navigate(`/join/${roomID}`, {
       state: { roomId: roomID, name: username, role: "creator" },
     });
